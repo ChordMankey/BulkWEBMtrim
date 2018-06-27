@@ -1,13 +1,16 @@
 import sys
 import os
 import csv
+from pathlib import Path
 from ffmpy import FFmpeg
 
 
 for in_path in sys.argv[1:]:
-    if os.path.isfile(in_path):
+    in_path = Path(in_path).resolve()
+
+    if os.path.isfile(in_path) and ((in_path.suffix == '.csv') or (in_path.suffix == '.txt')):
         index = 1
-        filename = os.path.basename(in_path).split('.')[0]
+        filename = in_path.stem
 
         if not os.path.exists('W:\\WEBM\\' + filename):
             os.makedirs('W:\\WEBM\\' + filename)
@@ -34,6 +37,9 @@ for in_path in sys.argv[1:]:
                     input_arg = '-ss {} -to {}'.format(start, stop)
 
                 else:
+                    stop_h = 99
+                    stop_m = 99
+                    stop_s = 99
                     input_arg = '-ss {}'.format(start)
 
 
@@ -47,10 +53,18 @@ for in_path in sys.argv[1:]:
 
 
                 ff = FFmpeg(
-                    inputs={in_path.split('.')[0] + '.mp4': input_arg},
+                    inputs={str(in_path).split('.')[0] + '.mp4': input_arg},
                     outputs={'W:\\WEBM\\' + filename + '\\' + output_filename: output_arg}
                 )
 
-
+                print('Filename: {}\nFrom {:02}.{:02}.{:02} to {:02}.{:02}.{:02}\n\nRunning command:\n{}'.format(
+                    output_filename,
+                    start_h, start_m, start_s,
+                    stop_h, stop_m, stop_s,
+                    ff.cmd))
                 ff.run()
-                index+=1
+                print('CONVERSION COMPLETED\n\n\n')
+
+                index += 1
+    else:
+        print('"{}" is not a supported filetype'.format(str(in_path)))
