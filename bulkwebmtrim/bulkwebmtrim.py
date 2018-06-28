@@ -1,8 +1,24 @@
 import sys
 import os
 import csv
+import configparser
 from pathlib import Path
 from ffmpy import FFmpeg
+
+config_path = Path('config.ini')
+Config = configparser.ConfigParser()
+if not config_path.is_file():
+    config_file = open(config_path, 'w+')
+
+    Config.add_section('Paths')
+    Config.set('Paths', 'OutputDir', 'W:\\WEBM\\')
+    Config.write(config_file)
+    config_file.close()
+
+Config.read(config_path)
+output_dir = Config['Paths']['OutputDir']
+
+
 
 
 for in_path in sys.argv[1:]:
@@ -12,8 +28,8 @@ for in_path in sys.argv[1:]:
         index = 1
         filename = in_path.stem
 
-        if not os.path.exists('W:\\WEBM\\' + filename):
-            os.makedirs('W:\\WEBM\\' + filename)
+        if not os.path.exists(output_dir + filename):
+            os.makedirs(output_dir + filename)
 
 
         with open(in_path) as csvfile:
