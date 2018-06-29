@@ -2,6 +2,7 @@ import sys
 import os
 import csv
 import configparser
+import glob
 from pathlib import Path
 from ffmpy import FFmpeg
 
@@ -12,11 +13,19 @@ if not config_path.is_file():
 
     Config.add_section('Paths')
     Config.set('Paths', 'OutputDir', 'W:\\WEBM\\')
+
+    Config.add_section('CSV')
+    Config.set('CSV', 'Delimiter', '$')
+
+    Config.add_section('Encoding')
+    Config.set('Encoding', '4chan Filesize Limit', 'False')
+
     Config.write(config_file)
     config_file.close()
 
 Config.read(config_path)
 output_dir = Config['Paths']['OutputDir']
+csv_delimiter = Config['CSV']['Delimiter']
 
 
 
@@ -33,10 +42,16 @@ for in_path in sys.argv[1:]:
 
 
         with open(in_path) as csvfile:
-            readCSV = csv.reader(csvfile, delimiter='$')
+            readCSV = csv.reader(csvfile, delimiter=csv_delimiter)
 
 
             for row in readCSV:
+                for file_result in glob.glob(str(in_path).split('.')[0] + '*'):
+                    if not file_result.endswith('.csv') and not file_result.endswith('.txt'):
+                        input_file = Path(file_result)
+                        break
+
+
                 output_filename = "{:02} ".format(index) + filename + ' ' + row[2] + '.webm'
                 output_arg = '-c:v libvpx-vp9 -pix_fmt yuv420p -threads 8 -slices 4 -ac 2 -c:a libopus -qmin 28 -crf 30 -qmax 32 -qcomp 1 -b:v 0 -b:a 128000 -vbr on -f webm'
 
@@ -69,8 +84,8 @@ for in_path in sys.argv[1:]:
 
 
                 ff = FFmpeg(
-                    inputs={str(in_path).split('.')[0] + '.mp4': input_arg},
-                    outputs={'W:\\WEBM\\' + filename + '\\' + output_filename: output_arg}
+                    inputs={str(input_file): input_arg},
+                    outputs={output_dir + filename + '\\' + output_filename: output_arg}
                 )
 
                 print('Filename: {}\nFrom {:02}.{:02}.{:02} to {:02}.{:02}.{:02}\n\nRunning command:\n{}'.format(
