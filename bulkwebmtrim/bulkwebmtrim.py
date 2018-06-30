@@ -8,8 +8,13 @@ from ffmpy import FFmpeg
 from colorama import init, Fore
 
 
+# Initialises colorama to support colourd stdout
+# printing on Windows.
 init()
 
+
+# Creates config.ini file if it doesn't exist and sets default options,
+# then proceeds to parse config file incase it already exists.
 config_path = Path('config.ini')
 Config = configparser.ConfigParser()
 if not config_path.is_file():
@@ -33,12 +38,13 @@ csv_delimiter = Config['CSV']['Delimiter']
 
 
 
-
+# Checks each argument excluding the first one and only processes
+# files with extension .txt or .csv
 for in_path in sys.argv[1:]:
     in_path = Path(in_path).resolve()
 
     if os.path.isfile(in_path) and ((in_path.suffix == '.csv') or (in_path.suffix == '.txt')):
-        index = 1
+        index = 1   # Index for output filenames
         filename = in_path.stem
 
         if not os.path.exists(output_dir + filename):
