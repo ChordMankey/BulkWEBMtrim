@@ -5,6 +5,10 @@ import configparser
 import glob
 from pathlib import Path
 from ffmpy import FFmpeg
+from colorama import init, Fore
+
+
+init()
 
 config_path = Path('config.ini')
 Config = configparser.ConfigParser()
@@ -88,14 +92,13 @@ for in_path in sys.argv[1:]:
                     outputs={output_dir + filename + '\\' + output_filename: output_arg}
                 )
 
-                print('Filename: {}\nFrom {:02}.{:02}.{:02} to {:02}.{:02}.{:02}\n\nRunning command:\n{}'.format(
-                    output_filename,
-                    start_h, start_m, start_s,
-                    stop_h, stop_m, stop_s,
-                    ff.cmd))
+                print('Filename: ' + Fore.YELLOW + output_filename + Fore.RESET +
+                      '\nFrom ' + Fore.MAGENTA + '{:02}:{:02}:{:02}'.format(start_h, start_m, start_s) + Fore.RESET +
+                      ' to ' + Fore.MAGENTA + '{:02}:{:02}:{:02}'.format(stop_h, stop_m, stop_s) + Fore.RESET +
+                      '\n\nRunning command:\n' + Fore.CYAN + ff.cmd + Fore.RESET)
                 ff.run()
-                print('CONVERSION COMPLETED\n\n\n')
+                print(Fore.GREEN + '\nCONVERSION COMPLETED\n\n\n' + Fore.RESET)
 
                 index += 1
     else:
-        print('"{}" is not a supported filetype'.format(str(in_path)))
+        print(Fore.RED + '"{}" is not a supported filetype'.format(str(in_path)) + Fore.RESET)
