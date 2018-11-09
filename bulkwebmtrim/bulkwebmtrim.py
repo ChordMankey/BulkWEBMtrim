@@ -20,15 +20,16 @@ def convert_video(input_file, input_arg, output_file, output_arg):
           ' to ' + Fore.MAGENTA + '{:02}:{:02}:{:02}'.format(stop[0], stop[1], stop[2]) + Fore.RESET +
           '\n\nRunning command:\n' + Fore.CYAN + ff.cmd + Fore.RESET)
 
+    os.environ['FFREPORT'] = 'file=' + output_file.stem + '.log' + ':level=32'
     ff.run()
-
+    del os.environ['FFREPORT']
 
 
 def row_parse(row, index, input_file):
     filename = input_file.stem
     output_filename = "{:02} ".format(index) + filename + ' ' + row[2] + '.webm'
     output_file = Path(config['OutputDir'] + filename + '\\' + output_filename)
-    output_arg = '-c:v libvpx-vp9 -pix_fmt yuv420p -threads 8 -slices 4 -ac 2 -c:a libopus -qmin 28 -crf 30 -qmax 32 -qcomp 1 -b:v 0 -b:a 128000 -vbr on -f webm'
+    output_arg = '-c:v libvpx-vp9 -pix_fmt yuv420p -threads 8 -slices 4 -ac 2 -c:a libopus -qmin 28 -crf 30 -qmax 32 -qcomp 1 -b:v 0 -b:a 128000 -vbr on -f webm -loglevel warning'
 
     global start
     start = [None] * 10
