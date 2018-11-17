@@ -119,15 +119,10 @@ def configuration(config_path):
     return config
 
 
-
-def main():
-    # Initialises colorama to support coloured stdout
-    # printing on Windows.
-    init()
-
+def traverser(master_path):
     # Checks each argument excluding the first one and only processes
     # files with extension .txt or .csv
-    for in_path in sys.argv[1:]:
+    for in_path in master_path:
         in_path = Path(in_path).resolve()
 
         if os.path.isfile(in_path) and ((in_path.suffix == '.csv') or (in_path.suffix == '.txt')):
@@ -138,8 +133,20 @@ def main():
 
             csv_parse(in_path)
 
+        elif os.path.isdir(in_path):
+            traverser(in_path.iterdir())
+
         else:
             print(Fore.RED + '"{}" is not a supported filetype'.format(str(in_path)) + Fore.RESET)
+
+
+
+def main():
+    # Initialises colorama to support coloured stdout
+    # printing on Windows.
+    init()
+
+    traverser(sys.argv[1:])
 
 
 # Creates config.ini file if it doesn't exist and sets default options,
