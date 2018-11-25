@@ -51,7 +51,7 @@ def row_parse(row, index, input_file):
         stop[0] = 99
         stop[1] = 99
         stop[2] = 99
-        input_arg = '-ss {}'.format(start)
+        input_arg = '-ss {}'.format(start_time)
 
     try:
         if row[3] == '+':
