@@ -27,18 +27,20 @@ def convert_video(input_file, input_arg, output_file, output_arg):
 
 def row_parse(row, index, input_file):
     filename = input_file.stem
-
+    input_arg = ''
     output_arg = '-c:v libvpx-vp9 -pix_fmt yuv420p -threads 8 -slices 4 -ac 2 -c:a libopus -qmin 28 -crf 30 -qmax 32 -qcomp 1 -b:v 0 -b:a 128000 -vbr on -f webm -loglevel error'
 
     global start
     global stop
 
     if '|' in row[0]:
-        # https://superuser.com/questions/681885/how-can-i-remove-multiple-segments-from-a-video-using-ffmpeg
-        input_arg = ''
-        output_arg += ' -filter_complex "'
+        # https://stackoverflow.com/questions/50594412/cut-multiple-parts-of-a-video-with-ffmpeg
         id_char = 'a'
         multi_index = 0
+        vf = ''
+        af = ''
+        vf += """-vf "select='"""
+        af += """-af "aselect='"""
 
         for times in row:
             if '|' in times:
@@ -57,30 +59,24 @@ def row_parse(row, index, input_file):
                     stop[1] = int(stop_str[2:4])
                     stop[2] = int(stop_str[4:6])
                     stop_time = stop[2] + (stop[1] * 60) + (stop[0] * 60 * 60)
-                    input_arg = '-ss {} -to {}'.format(start_time, stop_time)
+
+                    vf += 'between(t,{},{})+'.format(start_time, stop_time)
+                    af += 'between(t,{},{})+'.format(start_time, stop_time)
 
                 else:
                     stop[0] = 99
                     stop[1] = 99
                     stop[2] = 99
-                    input_arg = '-ss {}'.format(start_time)
 
-                output_arg += '[0:v]trim=start={}:end={},setpts=PTS-STARTPTS[{}v];'.format(start_time, stop_time, id_char)
-                output_arg += '[0:a]atrim=start={}:end={},asetpts=PTS-STARTPTS[{}a];'.format(start_time, stop_time, id_char)
+                    vf += 'gte(t,{})+'.format(start_time)
+                    af += 'gte(t,{})+'.format(start_time)
 
-                # Checking if id_char is greater than 'a'
-                if ord(id_char) > 97:
-                    id_char = chr(ord(id_char)+1)
-                    output_arg += '[{}v][{}v]concat[{}v];'.format(chr(ord(id_char)-2), chr(ord(id_char)-1), id_char)
-                    output_arg += '[{}a][{}a]concat=v=0:a=1[{}a];'.format(chr(ord(id_char)-2), chr(ord(id_char)-1), id_char)
-
-
-                id_char = chr(ord(id_char)+1)
+                    
                 multi_index += 1
-            else:
-                id_char = chr(ord(id_char)-1)
-                output_arg += '" -map [{}v] -map [{}a]'.format(id_char, id_char)
 
+            else:
+                vf = vf[:-1] + "',setpts=N/FRAME_RATE/TB"
+                af = af[:-1] + "',asetpts=N/SR/TB" + '"'
                 break
 
         output_filename = "{:02} ".format(index) + filename + ' ' + row[multi_index] + '.webm'
@@ -88,11 +84,15 @@ def row_parse(row, index, input_file):
 
         try:
             if row[multi_index] == '+':
-                output_arg += ' -vf transpose=clock'
+                vf += ',transpose=clock"'
             elif row[multi_index] == '-':
-                output_arg += ' -vf transpose=cclock'
+                vf += ',transpose=cclock"'
+            else:
+                vf += '"'
         except IndexError:
-            pass
+            vf += '"'
+
+        output_arg += ' {} {}'.format(vf, af)
 
     else:
         output_filename = "{:02} ".format(index) + filename + ' ' + row[2] + '.webm'
@@ -192,9 +192,10 @@ def traverser(master_path):
 
         if os.path.isfile(in_path) and ((in_path.suffix == '.csv') or (in_path.suffix == '.txt')):
             filename = in_path.stem
+            parent = in_path.parts[-1]
+            out_dir = Path(config['OutputDir']).joinpath(parent, filename)
 
-            if not os.path.exists(config['OutputDir'] + filename):
-                os.makedirs(config['OutputDir'] + filename)
+            out_dir.mkdir(parents=True, exist_ok=True)
 
             csv_parse(in_path)
 
