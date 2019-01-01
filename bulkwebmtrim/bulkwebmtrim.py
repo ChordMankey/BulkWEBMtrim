@@ -25,7 +25,7 @@ def convert_video(input_file, input_arg, output_file, output_arg):
     del os.environ['FFREPORT']
 
 
-def row_parse(row, index, input_file):
+def row_parse(row, index, input_file, out_dir):
     filename = input_file.stem
     input_arg = ''
     output_arg = '-c:v libvpx-vp9 -pix_fmt yuv420p -threads 8 -slices 4 -ac 2 -c:a libopus -qmin 28 -crf 30 -qmax 32 -qcomp 1 -b:v 0 -b:a 128000 -vbr on -f webm -loglevel error'
@@ -126,7 +126,7 @@ def row_parse(row, index, input_file):
             pass
 
 
-    output_file = Path(config['OutputDir'] + filename + '\\' + output_filename)
+    output_file = out_dir.joinpath(output_filename) # Path(config['OutputDir'] + filename + '\\' + output_filename)
     try:
         convert_video(input_file, input_arg, output_file, output_arg)
     except Exception as e:
@@ -136,7 +136,7 @@ def row_parse(row, index, input_file):
 
 
 
-def csv_parse(in_path):
+def csv_parse(in_path, out_dir):
     in_path = Path(in_path)
 
     input_file = None
@@ -150,7 +150,7 @@ def csv_parse(in_path):
         read_csv = csv.reader(csvfile, delimiter=config['Delimiter'])
 
         for row in read_csv:
-            row_parse(row, index, input_file)
+            row_parse(row, index, input_file, out_dir)
             index += 1
 
 
@@ -192,12 +192,12 @@ def traverser(master_path):
 
         if os.path.isfile(in_path) and ((in_path.suffix == '.csv') or (in_path.suffix == '.txt')):
             filename = in_path.stem
-            parent = in_path.parts[-1]
+            parent = in_path.parts[-2]
             out_dir = Path(config['OutputDir']).joinpath(parent, filename)
 
             out_dir.mkdir(parents=True, exist_ok=True)
 
-            csv_parse(in_path)
+            csv_parse(in_path, out_dir)
 
         elif os.path.isdir(in_path):
             traverser(in_path.iterdir())
